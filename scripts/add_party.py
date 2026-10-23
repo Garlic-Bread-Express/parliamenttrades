@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""
-Fill in party, riding and province for every MP in an mp_holdings.csv, using the
-House of Commons "Current Members of Parliament" list.
 
-  python add_party.py mp_holdings.csv                 # downloads the list and edits the CSV in place
-  python add_party.py mp_holdings.csv --html members.html   # use a page you saved from your browser
-
-A backup is written to <file>.bak first. Names that can't be matched are printed.
-"""
 import argparse, csv, difflib, re, shutil, sys, unicodedata
 
 URL = "https://www.ourcommons.ca/members/en/search"
