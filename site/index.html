@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MP Holdings Tracker – Canada</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f6f7f9;--card:#fff;--ink:#14181f;--mut:#667085;--line:#e3e6eb;--acc:#d52b1e;--bar:#d52b1e33}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1116;--card:#171b22;--ink:#e8ebf0;--mut:#98a2b3;--line:#262c36;--acc:#ff5a4d;--bar:#ff5a4d40}}
+:root[data-theme="dark"]{--bg:#0e1116;--card:#171b22;--ink:#e8ebf0;--mut:#98a2b3;--line:#262c36;--acc:#ff5a4d;--bar:#ff5a4d40}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--line);padding:14px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+h1{font-size:18px;margin:0}h1 span{color:var(--acc)}
+nav{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+nav button{background:none;border:0;color:var(--mut);padding:8px 12px;border-radius:8px;cursor:pointer;font:inherit}
+nav button.on{background:var(--bar);color:var(--ink);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:20px}
+.warn{background:var(--bar);border:1px solid var(--acc);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13.5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat,.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.stat b{display:block;font-size:26px}.stat small{color:var(--mut)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px}
+h2{font-size:15px;margin:0 0 10px}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:6px 0;position:relative}
+.row i{position:absolute;left:0;bottom:2px;height:3px;background:var(--acc);border-radius:2px;opacity:.6}
+.row small{color:var(--mut)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mut);font-weight:600;font-size:12.5px}
+.tag{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--line);color:var(--mut)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+input,select,textarea,.btn{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+textarea{width:100%;min-height:120px;font-family:ui-monospace,monospace;font-size:12.5px}
+.btn{cursor:pointer;background:var(--acc);color:#fff;border:0}
+.note{color:var(--mut);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🍁 MP Holdings <span>Tracker</span></h1>
+  <nav id="nav"></nav>
+</header>
+<main>
+  <div class="warn" id="banner"></div>
+  <div id="view"></div>
+</main>
+<script>
+// ---------- Data ----------
+// Row shape: {mp, party, riding, company, ticker, sector, type, owner, date}
+const COS=[["Enbridge","ENB","Energy"],["Royal Bank of Canada","RY","Financials"],["Shopify","SHOP","Technology"],["Suncor Energy","SU","Energy"],["TD Bank","TD","Financials"],["Canadian Natural Resources","CNQ","Energy"],["Brookfield Corp.","BN","Financials"],["Telus","T","Telecom"],["BCE Inc.","BCE","Telecom"],["Canadian National Railway","CNR","Industrials"],["Loblaw","L","Consumer"],["Nutrien","NTR","Materials"],["Barrick Gold","ABX","Materials"],["Manulife","MFC","Financials"],["Fortis","FTS","Utilities"]];
+const PARTIES=["Liberal","Conservative","Bloc Québécois","NDP","Green"];
+function sample(){
+  let s=42;const r=()=>(s=(s*1664525+1013904223)%4294967296)/4294967296;
+  const out=[];
+  for(let i=1;i<=24;i++){
+    const mp="Sample MP "+String(i).padStart(2,"0"),party=PARTIES[Math.floor(r()*r()*5)],riding="Sample Riding "+i;
+    const n=1+Math.floor(r()*7);
+    for(let k=0;k<n;k++){
+      const c=COS[Math.floor(r()*COS.length)];
+      const d=new Date(2026,9,22-Math.floor(r()*400)).toISOString().slice(0,10);
+      out.push({mp,party,riding,company:c[0],ticker:c[1],sector:c[2],type:r()<.8?"Stock":"Mutual fund / ETF",owner:r()<.7?"Self":"Spouse",date:d,action:"Held",disclosed:d});
+    }
+  }
+  return out;
+}
+let DATA=sample(),IS_SAMPLE=true,TAB="Overview",F={q:"",party:""};
+
+// ---------- Helpers ----------
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function count(rows,key){const m=new Map();rows.forEach(r=>m.set(r[key],(m.get(r[key])||0)+1));return [...m].sort((a,b)=>b[1]-a[1]);}
+function bars(list,max=8,fmt=x=>x){
+  const top=list.slice(0,max),mx=top[0]?top[0][1]:1;
+  return top.map(([k,v])=>`<div class="row"><span>${esc(fmt(k))}</span><b>${v}</b><i style="width:${v/mx*100}%"></i></div>`).join("")||'<p class="note">No data.</p>';
+}
+function filtered(){
+  const q=F.q.toLowerCase();
+  return DATA.filter(r=>(!F.party||r.party===F.party)&&(!q||[r.mp,r.company,r.ticker,r.riding].join(" ").toLowerCase().includes(q)));
+}
+function parseCSV(t){
+  const lines=t.trim().split(/\r?\n/);if(lines.length<2)return[];
+  const split=l=>{const o=[];let c="",q=false;for(const ch of l){if(ch=='"')q=!q;else if(ch==","&&!q){o.push(c);c="";}else c+=ch;}o.push(c);return o.map(x=>x.trim());};
+  const h=split(lines[0]).map(x=>x.toLowerCase());
+  return lines.slice(1).map(l=>{const v=split(l),o={};h.forEach((k,i)=>o[k]=v[i]||"");return o;}).filter(o=>o.mp&&o.company);
+}
+
+function setData(d){
+  DATA=d.map(o=>({mp:o.mp,party:o.party||"Unknown",riding:o.riding||"",company:o.company,ticker:o.ticker||"",sector:o.sector||"Other",type:o.type||"Stock",owner:o.owner||"Self",date:o.date||"",action:o.action||"Held",disclosed:o.disclosed||o.date||""}));
+  IS_SAMPLE=false;
+}
+// ---------- Views ----------
+const TABS=["Overview","Disclosures","MPs","Companies","Import data","About the data"];
+function nav(){$("#nav").innerHTML=TABS.map(t=>`<button class="${t===TAB?"on":""}" data-t="${t}">${t}</button>`).join("");
+  $("#nav").onclick=e=>{if(e.target.dataset.t){TAB=e.target.dataset.t;render();location.hash=TAB.replace(/\W/g,"");}};}
+function tools(){return `<div class="tools"><input id="q" placeholder="Search MP, company, ticker…" value="${esc(F.q)}"><select id="p"><option value="">All parties</option>${[...new Set(DATA.map(r=>r.party))].filter(Boolean).sort().map(p=>`<option ${F.party===p?"selected":""}>${esc(p)}</option>`).join("")}</select></div>`;}
+function bindTools(){const q=$("#q");if(!q)return;q.oninput=()=>{F.q=q.value;const pos=q.selectionStart;render();const n=$("#q");n.focus();n.setSelectionRange(pos,pos);};$("#p").onchange=e=>{F.party=e.target.value;render();};}
+function table(head,rows){return `<div class="tw"><table><thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`;}
+
+function overview(rows){
+  const mps=new Set(rows.map(r=>r.mp)),cos=new Set(rows.map(r=>r.company));
+  const byMP=count(rows,"mp"),byCo=count(rows,"company"),bySec=count(rows,"sector"),byParty=count(rows,"party");
+  const latest=[...rows].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
+  return `<div class="grid">
+    <div class="stat"><b>${rows.length}</b><small>Disclosed holdings</small></div>
+    <div class="stat"><b>${mps.size}</b><small>MPs with holdings</small></div>
+    <div class="stat"><b>${cos.size}</b><small>Companies</small></div>
+    <div class="stat"><b>${rows.filter(r=>r.owner==="Spouse").length}</b><small>Held by spouse</small></div></div>
+  <div class="card" style="margin-bottom:16px"><h2>Most recent disclosures</h2>${table(["Date","MP","Party","Company","Action","Owner"],latest.map(r=>`<tr><td>${r.date}</td><td>${esc(r.mp)}</td><td><span class="tag">${esc(r.party)}</span></td><td>${esc(r.company)} <small class="note">${esc(r.ticker)}</small></td><td>${esc(r.action)}</td><td>${esc(r.owner)}</td></tr>`))}</div>
+  <div class="cols">
+    <div class="card"><h2>MPs with the most disclosed holdings</h2>${bars(byMP)}</div>
+    <div class="card"><h2>Most commonly held companies</h2>${bars(byCo,8)}</div>
+    <div class="card"><h2>Holdings by sector</h2>${bars(bySec)}</div>
+    <div class="card"><h2>Holdings by party</h2>${bars(byParty)}</div></div>`;
+}
+function disclosures(rows){
+  return `<div class="card">${table(["Date","MP","Party","Riding","Company","Ticker","Sector","Type","Action","Owner"],[...rows].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,200).map(r=>`<tr><td>${r.date}</td><td>${esc(r.mp)}</td><td>${esc(r.party)}</td><td>${esc(r.riding)}</td><td>${esc(r.company)}</td><td>${esc(r.ticker)}</td><td>${esc(r.sector)}</td><td>${esc(r.type)}</td><td>${esc(r.action)}</td><td>${esc(r.owner)}</td></tr>`))}</div>`;
+}
+function mpsView(rows){
+  const m=new Map();rows.forEach(r=>{const o=m.get(r.mp)||{p:r.party,ri:r.riding,n:0,cos:new Set(),sec:new Set()};o.n++;o.cos.add(r.company);o.sec.add(r.sector);m.set(r.mp,o);});
+  return `<div class="card">${table(["MP","Party","Riding","Holdings","Companies","Sectors"],[...m].sort((a,b)=>b[1].n-a[1].n).map(([k,o])=>`<tr><td>${esc(k)}</td><td>${esc(o.p)}</td><td>${esc(o.ri)}</td><td>${o.n}</td><td>${[...o.cos].slice(0,3).map(esc).join(", ")}${o.cos.size>3?" +"+(o.cos.size-3):""}</td><td>${[...o.sec].map(esc).join(", ")}</td></tr>`))}</div>`;
+}
+function companiesView(rows){
+  const m=new Map();rows.forEach(r=>{const o=m.get(r.company)||{t:r.ticker,s:r.sector,mps:new Set(),pt:new Set()};o.mps.add(r.mp);o.pt.add(r.party);m.set(r.company,o);});
+  return `<div class="card">${table(["Company","Ticker","Sector","MPs holding","Parties"],[...m].sort((a,b)=>b[1].mps.size-a[1].mps.size).map(([k,o])=>`<tr><td>${esc(k)}</td><td>${esc(o.t)}</td><td>${esc(o.s)}</td><td>${o.mps.size}</td><td>${[...o.pt].map(esc).join(", ")}</td></tr>`))}</div>`;
+}
+function importView(){
+  return `<div class="card"><h2>Load your own data</h2>
+  <p class="note">Paste CSV (or upload a file) with this header row:<br><code>mp,party,riding,company,ticker,sector,type,owner,date</code><br>Dates as YYYY-MM-DD. Data stays in your browser.</p>
+  <textarea id="csv" placeholder="mp,party,riding,company,ticker,sector,type,owner,date"></textarea>
+  <div class="tools" style="margin-top:10px"><input type="file" id="file" accept=".csv,text/csv"><button class="btn" id="load">Load data</button><button class="btn" id="reset" style="background:var(--mut)">Reset to sample</button></div>
+  <p class="note" id="msg"></p></div>`;
+}
+function aboutView(){
+  return `<div class="card"><h2>What data exists in Canada?</h2>
+  <p>Unlike the U.S. (where members report individual trades with dates and dollar ranges), Canadian MPs file confidential disclosures with the Office of the Conflict of Interest and Ethics Commissioner. The <b>public registry</b> then publishes <b>disclosure summaries</b>: general lists of assets, liabilities and outside activities, plus public statements on gifts, sponsored travel and material changes.</p>
+  <p>So this site is built around <b>disclosed holdings</b>, not trading volume. Summaries list holdings only. Notices of material change carry a date of change and sometimes say shares were purchased or sold (the Action column), but never amounts. “Date” is the disclosure date for summaries and the date of change for notices. Rankings here mean “most disclosed holdings”.</p>
+  <p>The registry only keeps current Members, and entries are removed when Parliament is dissolved, so a long-term archive requires you to save snapshots yourself.</p>
+  <p><a href="https://prciec-rpccie.parl.gc.ca/EN/PublicRegistries/Pages/PublicRegistryHome.aspx" target="_blank" rel="noopener" style="color:var(--acc)">Open the official public registry →</a></p></div>`;
+}
+
+function render(){
+  nav();
+  $("#banner").innerHTML=IS_SAMPLE?"<b>Sample data.</b> These MPs and holdings are fictional placeholders to show the layout; the companies are real, the people and holdings are not. Use “Import data” to load real disclosures from the official registry.":"Source: Office of the Conflict of Interest and Ethics Commissioner public registry; party data from ourcommons.ca. Most recent disclosure in this data: "+(DATA.reduce((m,r)=>r.disclosed>m?r.disclosed:m,"")||"unknown")+". Verify against the original before relying on it.";
+  const rows=filtered(),v=$("#view");
+  const filt=["Overview","Disclosures","MPs","Companies"].includes(TAB);
+  v.innerHTML=(filt?tools():"")+({Overview:()=>overview(rows),Disclosures:()=>disclosures(rows),MPs:()=>mpsView(rows),Companies:()=>companiesView(rows),"Import data":importView,"About the data":aboutView}[TAB])();
+  bindTools();
+  if(TAB==="Import data"){
+    $("#file").onchange=e=>{const f=e.target.files[0];if(f)f.text().then(t=>$("#csv").value=t);};
+    $("#load").onclick=()=>{const d=parseCSV($("#csv").value);if(!d.length){$("#msg").textContent="No valid rows found. Check the header and required columns (mp, company).";return;}
+      setData(d);TAB="Overview";render();};
+    $("#reset").onclick=()=>{DATA=sample();IS_SAMPLE=true;render();};
+  }
+}
+fetch("mp_holdings.csv",{cache:"no-store"}).then(r=>r.ok?r.text():Promise.reject()).then(t=>{const d=parseCSV(t);if(d.length){setData(d);render();}}).catch(()=>{});
+const h=location.hash.slice(1);const m=TABS.find(t=>t.replace(/\W/g,"")===h);if(m)TAB=m;
+render();
+</script>
+</body>
+</html>
