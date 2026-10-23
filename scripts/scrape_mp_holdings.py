@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
-"""
-Scrape MP disclosure summaries + notices of material change from the
-Office of the Conflict of Interest and Ethics Commissioner public registry
-and write a CSV the "MP Holdings Tracker" page can import.
 
-  pip install requests beautifulsoup4
-  python scrape_mp_holdings.py --max-pages 1 --save-raw raw.jsonl   # smoke test first
-  python scrape_mp_holdings.py --enrich --out mp_holdings.csv        # full run (~40 pages)
-  python scrape_mp_holdings.py --from-raw raw.jsonl --enrich         # re-parse without re-downloading
-
-Notes
-- Disclosure summaries list holdings (no amounts). Date = date disclosed, action = "Held".
-- Notices of material change carry a "Date of change" and wording like
-  "I have purchased shares of..." / "I no longer own...", so they are the closest thing
-  to dated trades. action = Acquired / Disposed / Changed.
-- By default only the latest summary per MP is kept, plus changes disclosed after it.
-"""
 import argparse, csv, json, re, sys, time, unicodedata
 from datetime import datetime
 from urllib.parse import urljoin
