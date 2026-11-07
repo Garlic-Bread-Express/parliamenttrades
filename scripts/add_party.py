@@ -3,7 +3,7 @@
 import argparse, csv, difflib, re, shutil, sys, unicodedata
 
 URL = "https://www.ourcommons.ca/members/en/search"
-UA = {"User-Agent": "mp-holdings-research/1.0 (personal project; add your contact email here)"}
+UA = {"User-Agent": "mp-holdings-research/1.0"}
 HON = re.compile(r"^(?:Right Hon\.|Hon\.|Dr\.|Rev\.)\s*", re.I)
 PARTIES = "Conservative|Liberal|Bloc Québécois|NDP|Green Party|Independent|Canadian Senators Group"
 PROVINCES = ["Newfoundland and Labrador", "Prince Edward Island", "Northwest Territories", "British Columbia",
