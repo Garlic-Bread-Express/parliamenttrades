@@ -2,11 +2,10 @@ name: Update MP holdings
 
 on:
   schedule:
-    - cron: "17 8 * * *"      # every day at 08:17 UTC
-  workflow_dispatch:          # lets you run it by hand from the Actions tab
-
+    - cron: "00 00 * * *"
+  workflow_dispatch:
 permissions:
-  contents: write             # needed so the job can commit the new CSV
+  contents: write
 
 jobs:
   update:
