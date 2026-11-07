@@ -6,14 +6,13 @@ from urllib.parse import urljoin
 
 BASE = "https://www.ethicscanada.ca"
 LIST_URL = BASE + "/en/public-registry"
-ROLE_MP = "cac94a19-d04e-e111-b8ea-00265535a320"        # copied from your URL (role = Members of Parliament)
-STATUS_ACTIVE = "ecfdb65d-592d-4649-ad7c-a647f9862634"  # copied from your URL (the "s" filter)
-UA = {"User-Agent": "mp-holdings-research/1.0 (personal project; add your contact email here)"}
+ROLE_MP = "cac94a19-d04e-e111-b8ea-00265535a320"
+STATUS_ACTIVE = "ecfdb65d-592d-4649-ad7c-a647f9862634"
+UA = {"User-Agent": "mp-holdings-research/1.0"}
 KEEP = {"disclosure summary": "Disclosure summary", "notice of material change": "Material change"}
 FIELDS = ["mp", "party", "riding", "company", "ticker", "sector", "type", "owner", "date",
           "action", "source_type", "disclosed", "url"]
 
-# needle (regex, lowercase) -> canonical name, ticker, sector. Extend freely.
 CANON = [
     ("royal bank", "Royal Bank of Canada", "RY", "Financials"), ("rbc", "Royal Bank of Canada", "RY", "Financials"),
     ("toronto-dominion", "TD Bank", "TD", "Financials"), ("td bank", "TD Bank", "TD", "Financials"),
@@ -156,7 +155,6 @@ def parse_holdings(desc, kind, disclosed, include_other=False):
     return out
 
 
-# ---------------------------------------------------------------- listing page parsing
 DISCL = re.compile(r"Disclosed on\s+([A-Z][a-z]+ \d{1,2}, \d{4})")
 
 
@@ -195,8 +193,6 @@ def parse_page(html):
                           disclosed=parse_any_date(m.group(1)) if m else "", desc=desc))
     return cards, all_dates
 
-
-# ---------------------------------------------------------------- network helpers
 def get(session, url, params=None, tries=4):
     import requests
     for i in range(tries):
@@ -229,7 +225,6 @@ def party_map(session):
         return {}
 
 
-# ---------------------------------------------------------------- main
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="mp_holdings.csv")
@@ -273,14 +268,13 @@ def main():
                 for c in cards:
                     f.write(json.dumps(c, ensure_ascii=False) + "\n")
 
-    # newest first -> first summary seen per MP is the current one
     cards.sort(key=lambda c: c["disclosed"], reverse=True)
     latest_summary, rows = {}, []
     for c in cards:
         if args.since and c["disclosed"] < args.since:
             continue
         if not args.all_summaries and c["mp"] in latest_summary:
-            continue  # superseded by a newer summary
+            continue
         if c["kind"] == "Disclosure summary":
             latest_summary[c["mp"]] = c["disclosed"]
         for r in parse_holdings(c["desc"], c["kind"], c["disclosed"], args.include_other_assets):
