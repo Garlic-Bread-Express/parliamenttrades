@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+"""
 python add_party.py mp_holdings.csv
+"""
 
 import argparse, csv, difflib, re, shutil, sys, unicodedata
 
