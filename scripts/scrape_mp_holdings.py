@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+"""
 pip install requests beautifulsoup4
 python scrape_mp_holdings.py --max-pages 1 --save-raw raw.jsonl
 python scrape_mp_holdings.py --enrich --out mp_holdings.csv
 python scrape_mp_holdings.py --from-raw raw.jsonl --enrich
+"""
 
 import argparse, csv, json, re, sys, time, unicodedata
 from datetime import datetime
